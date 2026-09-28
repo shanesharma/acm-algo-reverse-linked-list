@@ -1,0 +1,477 @@
+/* ==========================================================================
+   Linked-List Reversal Visualiser styling
+
+   Class-name hooks match exactly what the presentational components render:
+   - ListView    → .list-view, .list-view__track, .list-view__row,
+                   .list-view__slot, .node (--none, --curr, --prev, --relink),
+                   .link (--forward, --backward, --none, --cut, --new),
+                   .list-view__head-lane, .list-view__lanes, .list-view__lane,
+                   .pointer-tag (--head, --prev, --curr, --nxt)
+   - Controls    → .controls, .controls__run / __prev / __next / __reset,
+                   .controls__speed, .controls__speed-label, .controls__speed-select
+   - CodePanel   → .code-panel, .code-panel__header, .code-panel__mode,
+                   .code-panel__copy, .code-panel__code, .code-panel__line,
+                   .code-panel__line--current, .code-panel__caption,
+                   .code-panel__status--copied, .code-panel__status--error
+   - TestCaseInput → .test-case-input, .test-case-input__label,
+                   .test-case-input__row, .test-case-input__field,
+                   .test-case-input__run, .test-case-input__error
+   ========================================================================== */
+
+/* --- Visualiser root: force a clean white surface (Req 2.1) -------------- */
+.visualiser {
+  background-color: #ffffff;
+  color: #1a1a1a;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 32px;
+  text-align: left;
+  box-sizing: border-box;
+}
+
+.visualiser h1 {
+  color: #1a1a1a;
+  margin: 0;
+}
+
+/* --- Test_Case_Input ---------------------------------------------------- */
+.test-case-input {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.test-case-input__label {
+  font-size: 15px;
+  color: #4a4a4a;
+}
+
+.test-case-input__row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.test-case-input__field {
+  flex: 1 1 auto;
+  font-family: var(--mono);
+  font-size: 16px;
+  padding: 10px 12px;
+  border: 1px solid #d0d0d0;
+  border-radius: 6px;
+  background-color: #ffffff;
+  color: #1a1a1a;
+}
+
+.test-case-input__field:focus-visible {
+  outline: 2px solid #4a7cff;
+  outline-offset: 1px;
+}
+
+.test-case-input__field[aria-invalid='true'] {
+  border-color: #c0392b;
+}
+
+.test-case-input__run {
+  font-size: 15px;
+  padding: 10px 16px;
+  border: 1px solid #d0d0d0;
+  border-radius: 6px;
+  background-color: #ffffff;
+  color: #1a1a1a;
+  cursor: pointer;
+  transition: background-color 150ms ease;
+}
+
+.test-case-input__run:hover:not(:disabled) {
+  background-color: #f0f0f0;
+}
+
+.test-case-input__run:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.test-case-input__error {
+  color: #c0392b;
+  font-size: 14px;
+  margin: 0;
+}
+
+/* --- List_View ---------------------------------------------------------- */
+/* The track never wraps (a wrapped row would break the arrows), so long
+   lists scroll horizontally instead. */
+.list-view {
+  overflow-x: auto;
+  padding: 16px 8px;
+  background-color: #ffffff;
+}
+
+.list-view__track {
+  position: relative;
+  width: max-content;
+  margin: 0 auto;
+}
+
+.list-view__row {
+  display: flex;
+  align-items: center;
+}
+
+.list-view__slot {
+  display: flex;
+  align-items: center;
+}
+
+/* Node footprint must match SLOT_ADVANCE in ListView.tsx:
+   56px node + 44px link = 100px per slot. */
+.node {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  padding: 0 4px;
+  box-sizing: border-box;
+  border: 1px solid #d0d0d0;
+  border-radius: 8px;
+  background-color: #fafafa;
+  color: #1a1a1a;
+  font-family: var(--mono);
+  font-size: 18px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease;
+}
+
+/* The None terminals: visibly "not a node". */
+.node--none {
+  border-style: dashed;
+  background-color: transparent;
+  color: #8a8a8a;
+  font-size: 13px;
+}
+
+/* curr: yellow highlight, matching the reference's active cell. */
+.node--curr {
+  background-color: #ffe066;
+  border-color: #e6c200;
+}
+
+/* prev: the head of the already-reversed part. */
+.node--prev {
+  background-color: #dbe8ff;
+  border-color: #7fa2e6;
+}
+
+.node--none.node--curr,
+.node--none.node--prev {
+  color: #1a1a1a;
+}
+
+/* Relink_Effect on the node whose arrow just flipped: the same squash-and-
+   settle "clunk" as the reference's Place_Effect. */
+.node--relink {
+  animation: node-relink 380ms cubic-bezier(0.2, 0.9, 0.3, 1.4);
+}
+
+@keyframes node-relink {
+  0% {
+    transform: translateY(-6px) scale(1.12);
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.18);
+  }
+  45% {
+    transform: translateY(0) scaleX(1.1) scaleY(0.9);
+  }
+  70% {
+    transform: translateY(-2px) scale(1.03);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    box-shadow: 0 0 0 rgba(0, 0, 0, 0);
+  }
+}
+
+.link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 16px;
+  color: #6a6a6a;
+}
+
+.link svg {
+  display: block;
+}
+
+.link--backward svg {
+  transform: scaleX(-1);
+}
+
+/* The freshly created backward link grows out of curr toward prev. */
+.link--new {
+  color: #2e9e4f;
+}
+
+.link--new svg {
+  animation: link-new 420ms cubic-bezier(0.2, 0.9, 0.3, 1.2);
+}
+
+@keyframes link-new {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(-1);
+  }
+}
+
+/* The forward link that was just cut fades out and drops away. */
+.link--cut {
+  color: #c0392b;
+}
+
+.link--cut svg {
+  animation: link-cut 420ms ease-in forwards;
+}
+
+@keyframes link-cut {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+/* Pointer lanes: one lane per variable so tags never overlap. */
+.list-view__head-lane,
+.list-view__lane {
+  position: relative;
+  height: 24px;
+}
+
+.list-view__head-lane {
+  margin-bottom: 6px;
+}
+
+.list-view__lanes {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* Tags are centred under their slot and slide between slots. */
+.pointer-tag {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 56px;
+  text-align: center;
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 24px;
+  border-radius: 4px;
+  transform: translateX(var(--slot-x, 0));
+  transition: transform 300ms cubic-bezier(0.45, 0, 0.2, 1);
+}
+
+.pointer-tag--head {
+  color: #4a4a4a;
+  font-weight: 600;
+}
+
+.pointer-tag--prev {
+  background-color: #dbe8ff;
+  color: #1f4fa8;
+}
+
+.pointer-tag--curr {
+  background-color: #ffe066;
+  color: #1a1a1a;
+}
+
+.pointer-tag--nxt {
+  background-color: #eadcff;
+  color: #5b2aa8;
+}
+
+/* --- Controls ----------------------------------------------------------- */
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.controls__run,
+.controls__prev,
+.controls__next,
+.controls__reset {
+  font-size: 15px;
+  padding: 8px 16px;
+  border: 1px solid #d0d0d0;
+  border-radius: 6px;
+  background-color: #ffffff;
+  color: #1a1a1a;
+  cursor: pointer;
+  transition: background-color 150ms ease;
+}
+
+.controls__run:hover:not(:disabled),
+.controls__prev:hover:not(:disabled),
+.controls__next:hover:not(:disabled),
+.controls__reset:hover:not(:disabled) {
+  background-color: #f0f0f0;
+}
+
+.controls__run:disabled,
+.controls__prev:disabled,
+.controls__next:disabled,
+.controls__reset:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.controls__speed {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #4a4a4a;
+}
+
+.controls__speed-select {
+  font-family: var(--sans);
+  font-size: 14px;
+  padding: 6px 8px;
+  border: 1px solid #d0d0d0;
+  border-radius: 6px;
+  background-color: #ffffff;
+  color: #1a1a1a;
+  cursor: pointer;
+}
+
+/* --- Code_Panel --------------------------------------------------------- */
+/* min-height keeps a stable footprint before a run; natural flow lets the
+   panel grow as the inline execution caption appears (Req 4.5). */
+.code-panel {
+  min-height: 220px;
+  background-color: var(--code-bg, #f4f3ec);
+  border: 1px solid #d0d0d0;
+  border-radius: 8px;
+  padding: 16px;
+  box-sizing: border-box;
+  overflow-x: auto;
+}
+
+.code-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.code-panel__mode {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #4a4a4a;
+}
+
+.code-panel__copy {
+  font-size: 14px;
+  padding: 6px 12px;
+  border: 1px solid #d0d0d0;
+  border-radius: 6px;
+  background-color: #ffffff;
+  color: #1a1a1a;
+  cursor: pointer;
+  transition: background-color 150ms ease;
+}
+
+.code-panel__copy:hover {
+  background-color: #f0f0f0;
+}
+
+.code-panel__code {
+  font-family: var(--mono);
+  font-size: 15px;
+  line-height: 1.6;
+  margin: 0;
+  white-space: pre;
+  color: #1a1a1a;
+}
+
+.code-panel__line {
+  display: block;
+  padding: 0 8px;
+  border-left: 3px solid transparent;
+}
+
+/* Current Python line: subtle highlight band (Req 4.3 support). */
+.code-panel__line--current {
+  background-color: #fff3bf;
+  border-left-color: #e6c200;
+}
+
+/* Inline live pointer-value caption grows the panel naturally (Req 4.4/4.5). */
+.code-panel__caption {
+  margin-top: 12px;
+  font-family: var(--mono);
+  font-size: 14px;
+  color: #4a4a4a;
+}
+
+.code-panel__status--copied {
+  margin-top: 8px;
+  color: #2e7d32;
+  font-size: 14px;
+}
+
+.code-panel__status--error {
+  margin-top: 8px;
+  color: #c0392b;
+  font-size: 14px;
+}
+
+/* --- Reduced-motion fallback -------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .pointer-tag {
+    transition: none;
+  }
+
+  .node--relink,
+  .link--new svg,
+  .link--cut svg {
+    animation: none;
+  }
+
+  .link--cut svg {
+    opacity: 0;
+  }
+}
+
+/* Pin the app to a light surface so the white background holds even when the
+   OS reports a dark color-scheme preference (Req 2.1). The .visualiser block
+   above sets its own explicit colors; this keeps the surrounding root white. */
+:root:has(.visualiser),
+#root:has(.visualiser) {
+  color-scheme: light;
+  --bg: #ffffff;
+  --text: #1a1a1a;
+  --text-h: #1a1a1a;
+  --border: #d0d0d0;
+  --code-bg: #f4f3ec;
+  background-color: #ffffff;
+}
